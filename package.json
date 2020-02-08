@@ -5,8 +5,8 @@
   "main": "main.js",
   "private": true,
   "scripts": {
-    "electron": "electron .",
-    "start": "react-scripts start",
+    "electron": "ELECTRON_IS_DEV=0 electron .",
+    "start": "BROWSER=none react-scripts start",
     "rebuild": "electron-rebuild -f -w sqlite3",
     "build": "react-scripts build",
     "test": "react-scripts test",

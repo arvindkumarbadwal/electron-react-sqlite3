@@ -1,17 +1,8 @@
 // Modules to control application life and create native browser window
 const { app, BrowserWindow, ipcMain} = require('electron')
 const path = require('path')
+const database = require('./config/database')
 const isDev = require('electron-is-dev')
-
-const { CATCH_ON_MAIN } = require('./utils/constants');
-
-const database = require('knex')({
-  client: 'sqlite3',
-  connection: {
-    filename: "./database/mydb.sqlite"
-  },
-  useNullAsDefault: true
-});
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -32,35 +23,29 @@ function createWindow () {
   //mainWindow.loadFile('index.html')
 
   mainWindow.loadURL(
-    isDev ? 'http://localhost:3000' : `file://${path.join(__dirname, 'index.html')}`,
+    isDev ? 'http://localhost:3000' : `file://${path.join(__dirname, 'build/index.html')}`,
   )
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
 
-
     /** create table example */
-  // database.schema.createTable('users', function (table) {
-  //   table.increments();
-  //   table.string('name');
-  //   table.timestamps();
-  // }).then(function() {
-  //   database('users').insert({ name: 'Slaughterhouse Five' }).then(function() {
-  //       let result = database.select("name").from("users")
-  //       result.then(function (rows) {
-  //         console.log(rows)
-
-  //         mainWindow.webContents.send("resultSent", rows);
-  //       })
-  //   })
-  // })
-
-  let result = database.select("name").from("users")
-  result.then(function (rows) {
-    console.log(rows)
-
-    mainWindow.webContents.send("resultSent", rows);
+  database.schema.hasTable('users').then(function (exists) {
+    if (!exists) {
+      database.schema.createTable('users', function (table) {
+        table.increments();
+        table.string('name');
+        table.timestamps();
+      })
+    }
   })
+
+  // let result = database.select("name").from("users")
+  // result.then(function (rows) {
+  //   console.log(rows)
+
+  //   mainWindow.webContents.send("resultSent", rows);
+  // }).catch( error => console.log(error))
 
 
   // Emitted when the window is closed.
@@ -93,9 +78,9 @@ app.on('activate', function () {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 ipcMain.on('message-from-react', (event, arg) => {
-  console.log('message-from-react :: '+arg);
+  database('users').insert({ name: arg }).then(function () {
+    event.reply('message-from-electron', 'Name added successfully !!!');
 
-  event.reply('message-from-electron', 'I am fine.');
-
-  mainWindow.webContents.send('message-from-electron', 'Are You There');
+    mainWindow.webContents.send('message-from-electron', 'Thank You For Subscribing for Moon Mission 2020 !!!');
+  }).catch(error => console.log(error))
 });
